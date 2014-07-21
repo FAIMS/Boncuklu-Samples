@@ -1,0 +1,366 @@
+/*** 'Editable' - you can edit the code below based on the needs ***/
+User user; // don't touch
+String userid;
+
+/*setSyncEnabled(true);
+setFileSyncEnabled(true);*/
+
+makeLocalID(){
+    fetchOne("drop view if exists identifierAsSpreadsheet;");
+    fetchOne("create view identifierAsSpreadsheet as select uuid, group_concat(coalesce(measure || ' ' || vocabname || '(' ||freetext||')',  measure || ' (' || freetext ||')',  vocabname || ' (' || freetext ||')',  measure || ' ' || vocabname ,  vocabname || ' (' || freetext || ')',  measure || ' (' || freetext || ')',  measure,  vocabname,  freetext,  measure,  vocabname,  freetext), ' ') as response from latestNonDeletedArchentIdentifiers group by uuid ;");
+}
+
+makeLocalID();
+
+/*** control ***/
+onEvent("control/Home/New_Sample", "click", "newSample()");
+onEvent("control/Home/Stage_1", "click", "showTabGroup(\"Stage_1\");");
+onEvent("control/Home/Stage_2", "click", "showTabGroup(\"Stage_2\");");
+onEvent("control/Home/Stage_3", "click", "showTabGroup(\"Stage_3\");");
+
+onEvent("control/Samples", "show", "refreshSamples()");
+onEvent("control/Samples/Search", "click", "clearSearchSample()");
+onEvent("control/Samples/searchButton", "click", "searchSample();");
+onEvent("control/Samples/Delete", "click", "sample_id = getFieldValue(\"control/Sample/Sample_DropDown\");deleteSample();")
+onEvent("control/Samples/Load", "click", "loadSampleFrom(getFieldValue(\"control/Sample/Sample_DropDown\"));")
+onEvent("control/Samples/SampleList", "click", "showSampleDetails();");
+
+refreshSamples() {
+    sample_id = null;
+    searchSample();
+}
+
+clearSearchSample(){
+    setFieldValue("control/Samples/Search","");
+}
+
+searchSample(){
+    String searchType;
+    if(!getFieldValue("control/Samples/SearchType").equals("All")) {
+        searchType = fetchOne("select vocabName from vocabulary where vocabid = '"+getFieldValue("control/Samples/SearchType")+"';").get(0);    
+    }
+    ArrayList searchList = fetchAll("select uuid, aenttypename || ': ' || group_concat(coalesce(measure || ' ' || vocabname || '(' ||freetext||')',  measure || ' (' || freetext ||')',  vocabname || ' (' || freetext ||')',  measure || ' ' || vocabname ,  vocabname || ' (' || freetext || ')',  measure || ' (' || freetext || ')',  measure,  vocabname,  freetext,  measure,  vocabname,  freetext), ' | ') as response " +
+        "FROM (select * from latestNonDeletedArchentIdentifiers order by case attributename when 'Sample ID' then 1 when 'Sample Type' then 2 else attributename end ) " +
+        "WHERE aenttypename = 'Sample'  " +
+        "and uuid in (select uuid  " +
+            "from  latestnondeletedarchent join aenttype using (aenttypeid) join idealaent using (aenttypeid) join attributekey using (attributeid) left outer join latestnondeletedaentvalue using (uuid, attributeid) left outer join vocabulary using (vocabid)  " +
+            "where ('" + getFieldValue("control/Samples/SearchType") + "' = 'All'  " +
+                "AND (freetext like '%"+getFieldValue("control/Samples/Search")+"%'  " +
+                    "or vocabname like '%"+getFieldValue("control/Samples/Search")+"%'  " +
+                    "or measure like '%"+getFieldValue("control/Samples/Search")+"%' ))" +
+            "OR ('" + getFieldValue("control/Samples/SearchType") + "' != 'All'  " +
+                "AND coalesce(vocabname, freetext) = '" + searchType + "' " +
+                "AND attributename = 'Sample Type' " +
+                "AND (freetext like '%"+getFieldValue("control/Samples/Search")+"%' " +
+                "or vocabname like '%"+getFieldValue("control/Samples/Search")+"%' " +
+                "or measure like '%"+getFieldValue("control/Samples/Search")+"%' )))" +
+        "GROUP BY uuid  " +
+        "order by response; ");
+    populateDropDown("control/Samples/Sample_DropDown", searchList);
+    populateList("control/Samples/Sample_List", searchList);
+}
+
+loadSearchAttributes() {
+    Object sampleTypes = makeVocab("Sample Type");
+    ArrayList all = new ArrayList();
+    all.add("All");
+    all.add("All");
+    sampleTypes.add(0,all);
+    populateDropDown("control/Samples/SearchType", sampleTypes);
+}
+
+showSampleDetails(){
+    listID = getListItemValue();
+    
+    foo = fetchOne("select group_concat(response, '\n') from ( select attributename || ': ' || coalesce(vocabname, freetext) as response from ( 
+        select uuid from latestnondeletedarchent join latestnondeletedaentreln using (uuid) 
+            where uuid = "+sample_id+") 
+        join latestnondeletedaentvalue using (uuid) 
+            join attributekey using (attributeid) left outer join vocabulary using (attributeid, vocabid) 
+                where attributename in ('Sample ID', 'Sample Type')  
+            and coalesce(vocabname, freetext) is not null 
+        group by uuid, attributename 
+        order by case attributename when 'Sample ID' then 1 when 'Sample Type' end); ");
+    if (!isNull(foo)){
+        showToast(foo.get(0));
+    }
+}
+
+/*** Sample ***/
+// onEvent("Sample/Sample_GeneralInformation/Update", "delayclick", "saveSample()");
+// onEvent("Sample/Sample_GeneralInformation/Delete", "delayclick", "deleteSample()");
+// onEvent("Sample/Sample_GeneralInformation/SaveAndNew", "delayclick", "saveAndNewSample()");
+// onEvent("Sample/Sample_GeneralInformation/Duplicate", "delayclick", "duplicateSample()");
+
+String sample_id = null;
+
+newSample(){
+    sample_id = null;
+    newTabGroup("Sample");
+}
+
+loadSampleFrom(archent_id) {
+    sample_id = archentid;
+    if (isNull(sample_id)) {
+        showToast("No Sample selected");
+        return;
+    }
+    showTabGroup("Sample", sample_id);
+}
+
+loadSample(archent_id) {
+    sample_id = getListItemValue();
+    loadSampleFrom(sample_id);
+}
+
+saveSample(String callback) {
+    // if (isNull(getFieldValue("Sample/Sample_GeneralInformation/Sample_ID"))) {
+    //     showWarning("Logic Error", "Cannot save record without id");
+    //     return;
+    // }
+    
+    if (!isNull(sample_id)) {
+        entity = fetchArchEnt(sample_id);
+    }
+    saveTabGroup("Sample", sample_id, null, null, "sample_id = getLastSavedRecordId();" + callback);
+    }
+    
+}
+
+deleteSample(){
+    if (!isNull(sample_id)) {
+        showAlert("Confirm Deletion", "Press OK to Delete this Sample!", "reallyDeleteSample()", "doNotDelete()");
+    } else {
+         cancelTabGroup("Sample", true);
+    }
+}
+
+reallyDeleteSample(){
+    deleteArchEnt(sample_id);
+    showTabGroup("Sample");
+    cancelTabGroup("Sample", false);
+}
+
+loadSampleAttributes(){
+    // INSERT ATTRIBUTES
+}
+
+/*** Artefact Group ***/
+onEvent("Artefact_Group/Artefact_Group/attachPhoto", "click", "attachPictureTo(\"Artefact_Group/Artefact_Group/Photo\")");
+onEvent("Artefact_Group/Artefact_Group/attachAudio", "click", "attachAudioTo(\"Artefact_Group/Artefact_Group/Audio\")");
+onEvent("Artefact_Group/Artefact_Group/attachVideo", "click", "attachVideoTo(\"Artefact_Group/Artefact_Group/Video\")");
+onEvent("Artefact_Group/Artefact_Group/attachSketch", "click", "attachFileTo(\"Artefact_Group/Artefact_Group/Sketch\")");
+onEvent("Artefact_Group/Artefact_Group/viewattached", "click", "viewArchEntAttachedFiles(artefact_group_id)");
+onEvent("Artefact_Group/Artefact_Group/Update", "delayclick", "saveArtefactGroup(\"\")");
+onEvent("Artefact_Group/Artefact_Group/SaveAndNew", "delayclick", "saveArtefactGroup(\"newArtefactGroup();\")");
+onEvent("Artefact_Group/Artefact_Group/Duplicate", "delayclick", "saveArtefactGroup(\"artefact_group_id = null;\")");
+onEvent("Artefact_Group/Artefact_Group/Delete", "delayclick", "deleteArtefactGroup()");
+
+String artefact_group_id = null;
+
+newArtefactGroup(){
+    artefact_group_id = null;
+    newTabGroup("Artefact_Group");
+}
+
+loadArtefactGroup() {
+    artefact_group_id = getListItemValue();
+    loadArtefactGroupFrom(artefact_group_id);
+}
+
+loadArtefactGroupFrom(archent_id) {
+    artefact_group_id = archent_id;
+    if (isNull(artefact_group_id)) {
+        showToast("No Artefact Group selected");
+        return;
+    }
+    showTabGroup("Artefact_Group", artefact_group_id);
+}
+
+saveArtefactGroup(String callback) {
+    if (isNull(getFieldValue("Artefact_Group/Artefact_Group/Artefact_Group_ID"))) {
+        showWarning("Validation Error", "Cannot save record without id");
+        return;
+    }
+    if (!isNull(artefact_group_id)) {
+        entity = fetchArchEnt(artefact_group_id);
+    }
+
+    saveTabGroup("Artefact_Group", artefact_group_id, null, null, "artefact_group_id = getLastSavedRecordId();" + callback);
+}
+
+deleteArtefactGroup(){
+    if (!isNull(artefact_group_id)) {
+        showAlert("Confirm Deletion", "Press OK to Delete this Artefact Group!", "reallyDeleteArtefactGroup()", "doNotDelete()");
+    } else {
+        cancelTabGroup("Artefact_Group", true);
+    }
+}
+
+reallyDeleteArtefactGroup(){
+    deleteArchEnt(artefact_group_id);
+    showTabGroup("Artefact_Group");
+    cancelTabGroup("Artefact_Group", false);
+}
+
+loadArtefactGroupAttributes(){
+    populateHierarchicalDropDown("Artefact_Group/Artefact_Group/Artefact_Class", "Artefact Class");
+}
+
+/*** Special Find ***/
+onEvent("Special_Find/Special_Find/attachPhoto", "click", "attachPictureTo(\"Special_Find/Special_Find/Photo\")");
+onEvent("Special_Find/Special_Find/attachAudio", "click", "attachAudioTo(\"Special_Find/Special_Find/Audio\")");
+onEvent("Special_Find/Special_Find/attachVideo", "click", "attachVideoTo(\"Special_Find/Special_Find/Video\")");
+onEvent("Special_Find/Special_Find/Update", "delayclick", "saveSpecialFind(\"\")");
+onEvent("Special_Find/Special_Find/Duplicate", "delayclick", "saveSpecialFind(\"special_find_id = null\")");
+onEvent("Special_Find/Special_Find/SaveAndNew", "delayclick", "saveSpecialFind(\"newSpecialFind()\")");
+onEvent("Special_Find/Special_Find/Delete", "delayclick", "deleteSpecialFind()");
+
+String special_find_id = null;
+
+newSpecialFind(){
+    special_find_id = null;
+    newTabGroup("Special_Find");
+}
+
+loadSpecialFind() {
+    special_find_id = getListItemValue();
+    if (isNull(special_find_id)) {
+        showToast("No Special Find selected.");
+        return;
+    }
+    showTabGroup("Special_Find", special_find_id);
+}
+
+loadSpecialFindFrom(archent_id) {
+    special_find_id = archent_id;
+    if (isNull(special_find_id)) return;
+    showTabGroup("Special_Find", special_find_id);
+}
+
+saveSpecialFind(String callback) {
+    if (isNull(getFieldValue("Special_Find/Special_Find/Special_Find_ID"))) {
+        showWarning("Logic Error", "Cannot save record without id");
+        return;
+    }
+    
+    if (!isNull(special_find_id)) {
+        entity = fetchArchEnt(special_find_id);
+    }
+
+    saveTabGroup("Special_Find", special_find_id, null, null, "special_find_id = getLastSavedRecordId();" + callback);
+}
+
+deleteSpecialFind(){
+    if (!isNull(special_find_id)) {
+        showAlert("Confirm Deletion", "Press OK to Delete this Special Find!", "reallyDeleteSpecialFind()", "doNotDelete()");
+    } else {
+        cancelTabGroup("Special_Find", true);
+    }
+}
+
+reallyDeleteSpecialFind(){
+    deleteArchEnt(special_find_id);
+    showTabGroup("Special_Find");
+    cancelTabGroup("Special_Find", false);
+}
+
+loadSpecialFindAttributes(){
+    populateHierarchicalDropDown("Special_Find/Special_Find/Special_Find_Class", "Special Find Class");
+}
+
+/*** MISC ***/
+
+saveEntitiesToRel(type, entity1, entity2) {
+    if (isNull(entity1) || isNull(entity2)) return;
+    
+    rel_id = saveRel(null, type, null, null);
+    addReln(entity1, rel_id, null);
+    addReln(entity2, rel_id, null);
+}
+
+saveEntitiesToHierRel(type, entity1, entity2, e1verb, e2verb) {
+    if (isNull(entity1) || isNull(entity2)) return;
+    
+    rel_id = saveRel(null, type, null, null);
+    addReln(entity1, rel_id, e1verb);
+    addReln(entity2, rel_id, e2verb);
+}
+
+makeVocab(String attrib){
+    Object a = fetchAll("select vocabid, vocabname from vocabulary join attributekey using (attributeid) where attributename = '"+attrib+"' ");
+    return a;
+}
+
+makePictureGallery(String attrib){
+    fetchAll("select vocabid, vocabname, pictureurl from vocabulary left join attributekey using (attributeid) where attributename = '" + attrib + "' order by vocabname;");
+}
+
+doNotDelete(){
+    showToast("Delete Cancelled.");
+}
+
+/*** USER ***/
+
+getDefaultUsersList() {
+    users = fetchAll("select userid, fname ||' ' || lname from user");
+    return users;
+}
+
+populateListForUsers(){
+    populateDropDown("user/usertab/users", getDefaultUsersList());
+
+    Object localUser = fetchOne("select value from localSettings where key = 'User';");
+
+    if (!isNull(localUser)){
+        setFieldValue("user/usertab/users", localUser.get(0));
+    }
+}
+
+populateListForUsers();
+
+String username = "";
+String device = "";
+
+login(){
+    if(isNull(isNull(getFieldValue("user/usertab/users"))){
+        showWarning("Warning", "Please select a User before logging in.");
+    } else {
+        Object userResult = fetchOne("select userid,fname,lname,email from user where userid='" + getFieldValue("user/usertab/users") + "';");
+        User user = new User(userResult.get(0),userResult.get(1),userResult.get(2),userResult.get(3));
+        userid = userResult.get(0);
+        setUser(user);
+        username = userResult.get(1) + " " + userResult.get(2);
+        showTabGroup("control");
+
+        fetchOne("REPLACE INTO localSettings(key, value) VALUES('User', '"+userid+"');");
+    }
+}
+
+onEvent("user/usertab/login", "click", "login()");
+onEvent("user/usertab/guide", "click", "showTab(\"user/help\")");
+
+/*** SYNC ***/
+
+onEvent("control/Control/startsync", "click", "startSync()");
+onEvent("control/Control/stopsync", "click", "stopSync()");
+
+setSyncMinInterval(10.0f);
+setSyncMaxInterval(20.0f);
+setSyncDelay(5.0f);
+
+startSync() {
+    setSyncEnabled(true);
+    setFileSyncEnabled(true);
+}
+
+stopSync() {
+    setSyncEnabled(false);
+    setFileSyncEnabled(false);
+}
+
+// Stuff that needs to happen after everything.
+loadSearchAttributes();
+loadArtefactGroupAttributes();
+loadSampleAttributes();
+loadSpecialFindAttributes();
