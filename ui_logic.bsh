@@ -15,15 +15,15 @@ makeLocalID();
 /*** control ***/
 onEvent("control/Home/New_Sample", "click", "newSample()");
 onEvent("control/Home/Stage_1", "click", "showTabGroup(\"Stage_1\");");
-onEvent("control/Home/Stage_2", "click", "showTabGroup(\"Stage_2\");");
+onEvent("control/Home/Stage_2", "click", "showTabGroup(\"Heavy_Residue\");");
 onEvent("control/Home/Stage_3", "click", "showTabGroup(\"Stage_3\");");
 
 onEvent("control/Samples", "show", "refreshSamples()");
 onEvent("control/Samples/Search", "click", "clearSearchSample()");
-onEvent("control/Samples/searchButton", "click", "searchSample();");
-onEvent("control/Samples/Delete", "click", "sample_id = getFieldValue(\"control/Sample/Sample_DropDown\");deleteSample();")
-onEvent("control/Samples/Load", "click", "loadSampleFrom(getFieldValue(\"control/Sample/Sample_DropDown\"));")
-onEvent("control/Samples/SampleList", "click", "showSampleDetails();");
+onEvent("control/Samples/Search_Button", "click", "searchSample();");
+onEvent("control/Samples/Delete", "click", "sample_id = getFieldValue(\"control/Sample/Sample_DropDown\");deleteSample();");
+onEvent("control/Samples/Load", "click", "loadSampleFrom(getFieldValue(\"control/Sample/Sample_DropDown\"));");
+onEvent("control/Samples/Sample_List", "click", "showSampleDetails();");
 
 refreshSamples() {
     sample_id = null;
@@ -36,19 +36,19 @@ clearSearchSample(){
 
 searchSample(){
     String searchType;
-    if(!getFieldValue("control/Samples/SearchType").equals("All")) {
-        searchType = fetchOne("select vocabName from vocabulary where vocabid = '"+getFieldValue("control/Samples/SearchType")+"';").get(0);    
+    if(!getFieldValue("control/Samples/Search_Type").equals("All")) {
+        searchType = fetchOne("select vocabName from vocabulary where vocabid = '"+getFieldValue("control/Samples/Search_Type")+"';").get(0);    
     }
     ArrayList searchList = fetchAll("select uuid, aenttypename || ': ' || group_concat(coalesce(measure || ' ' || vocabname || '(' ||freetext||')',  measure || ' (' || freetext ||')',  vocabname || ' (' || freetext ||')',  measure || ' ' || vocabname ,  vocabname || ' (' || freetext || ')',  measure || ' (' || freetext || ')',  measure,  vocabname,  freetext,  measure,  vocabname,  freetext), ' | ') as response " +
         "FROM (select * from latestNonDeletedArchentIdentifiers order by case attributename when 'Sample ID' then 1 when 'Sample Type' then 2 else attributename end ) " +
         "WHERE aenttypename = 'Sample'  " +
         "and uuid in (select uuid  " +
             "from  latestnondeletedarchent join aenttype using (aenttypeid) join idealaent using (aenttypeid) join attributekey using (attributeid) left outer join latestnondeletedaentvalue using (uuid, attributeid) left outer join vocabulary using (vocabid)  " +
-            "where ('" + getFieldValue("control/Samples/SearchType") + "' = 'All'  " +
+            "where ('" + getFieldValue("control/Samples/Search_Type") + "' = 'All'  " +
                 "AND (freetext like '%"+getFieldValue("control/Samples/Search")+"%'  " +
                     "or vocabname like '%"+getFieldValue("control/Samples/Search")+"%'  " +
                     "or measure like '%"+getFieldValue("control/Samples/Search")+"%' ))" +
-            "OR ('" + getFieldValue("control/Samples/SearchType") + "' != 'All'  " +
+            "OR ('" + getFieldValue("control/Samples/Search_Type") + "' != 'All'  " +
                 "AND coalesce(vocabname, freetext) = '" + searchType + "' " +
                 "AND attributename = 'Sample Type' " +
                 "AND (freetext like '%"+getFieldValue("control/Samples/Search")+"%' " +
@@ -66,31 +66,46 @@ loadSearchAttributes() {
     all.add("All");
     all.add("All");
     sampleTypes.add(0,all);
-    populateDropDown("control/Samples/SearchType", sampleTypes);
+    populateDropDown("control/Samples/Search_Type", sampleTypes);
 }
 
 showSampleDetails(){
     listID = getListItemValue();
     
-    foo = fetchOne("select group_concat(response, '\n') from ( select attributename || ': ' || coalesce(vocabname, freetext) as response from ( 
-        select uuid from latestnondeletedarchent join latestnondeletedaentreln using (uuid) 
-            where uuid = "+sample_id+") 
-        join latestnondeletedaentvalue using (uuid) 
-            join attributekey using (attributeid) left outer join vocabulary using (attributeid, vocabid) 
-                where attributename in ('Sample ID', 'Sample Type')  
-            and coalesce(vocabname, freetext) is not null 
-        group by uuid, attributename 
-        order by case attributename when 'Sample ID' then 1 when 'Sample Type' end); ");
+    foo = fetchOne("select group_concat(response, '\n') from ( select attributename || ': ' || coalesce(vocabname, freetext) as response from ( " +
+        "select uuid from latestnondeletedarchent join latestnondeletedaentreln using (uuid)  " +
+            "where uuid = "+sample_id+")  " +
+        "join latestnondeletedaentvalue using (uuid)  " +
+            "join attributekey using (attributeid) left outer join vocabulary using (attributeid, vocabid)  " +
+                "where attributename in ('Sample ID', 'Sample Type')   " +
+            "and coalesce(vocabname, freetext) is not null  " +
+        "group by uuid, attributename  " +
+        "order by case attributename when 'Sample ID' then 1 when 'Sample Type' end);");
     if (!isNull(foo)){
         showToast(foo.get(0));
     }
 }
 
 /*** Sample ***/
-// onEvent("Sample/Sample_GeneralInformation/Update", "delayclick", "saveSample()");
-// onEvent("Sample/Sample_GeneralInformation/Delete", "delayclick", "deleteSample()");
-// onEvent("Sample/Sample_GeneralInformation/SaveAndNew", "delayclick", "saveAndNewSample()");
-// onEvent("Sample/Sample_GeneralInformation/Duplicate", "delayclick", "duplicateSample()");
+onEvent("Sample/Collected_Sample/Float", "click", "showTabGroup(\"Stage_1\");");
+onEvent("Sample/Collected_Sample/Wet_Sieve", "click", "showTabGroup(\"Stage_1\");");
+
+onEvent("Stage_1/Stage_1/Sample_Processed", "click", "showToast(\"Marks this sample as processed.\");");
+onEvent("Stage_1/Stage_1/Next_Sample", "click", "showToast(\"Creates a new record with MAGIC!\");");
+onEvent("Stage_1/Stage_1/Return_To_List", "click", "showTabGroup(\"Sample\");");
+onEvent("Stage_1/Stage_1/Stage_2_Processing", "click", "showTabGroup(\"Heavy_Residue\");");
+onEvent("Stage_1/Location/Add_Location", "click", "showToast(\"Adds a Sample Location related to this sample.\");");
+
+onEvent("Heavy_Residue/Heavy_Residue/Process_Fractions", "click", "showTabGroup(\"Stage_2\");");
+
+onEvent("Stage_2/Sample_Fraction/Fraction_Processed", "click", "showToast(\"Marks this fraction as processed.\");");
+onEvent("Stage_2/Sample_Fraction/Return_To_List", "click", "showTabGroup(\"Heavy_Residue\");");
+onEvent("Stage_2/Sample_Fraction/Add_New_Fraction", "click", "showToast(\"Not sure what this one does.\");");
+onEvent("Stage_2/Sorting/Add_Artefact", "click", "newArtefactGroup();");
+onEvent("Stage_2/Sorting/Add_Special_Find", "click", "newSpecialFind();");
+onEvent("Stage_2/Location/Add_Location", "click", "showToast(\"Adds a Sample Location related to this sample.\");");
+
+onEvent("Stage_3/Samples/Sort", "click", "showToast(\"Not sure what this one does.\");");
 
 String sample_id = null;
 
@@ -123,8 +138,6 @@ saveSample(String callback) {
         entity = fetchArchEnt(sample_id);
     }
     saveTabGroup("Sample", sample_id, null, null, "sample_id = getLastSavedRecordId();" + callback);
-    }
-    
 }
 
 deleteSample(){
@@ -308,13 +321,7 @@ getDefaultUsersList() {
 }
 
 populateListForUsers(){
-    populateDropDown("user/usertab/users", getDefaultUsersList());
-
-    Object localUser = fetchOne("select value from localSettings where key = 'User';");
-
-    if (!isNull(localUser)){
-        setFieldValue("user/usertab/users", localUser.get(0));
-    }
+    populateList("user/usertab/users", getDefaultUsersList());
 }
 
 populateListForUsers();
@@ -322,23 +329,16 @@ populateListForUsers();
 String username = "";
 String device = "";
 
-login(){
-    if(isNull(isNull(getFieldValue("user/usertab/users"))){
-        showWarning("Warning", "Please select a User before logging in.");
-    } else {
-        Object userResult = fetchOne("select userid,fname,lname,email from user where userid='" + getFieldValue("user/usertab/users") + "';");
-        User user = new User(userResult.get(0),userResult.get(1),userResult.get(2),userResult.get(3));
-        userid = userResult.get(0);
-        setUser(user);
-        username = userResult.get(1) + " " + userResult.get(2);
-        showTabGroup("control");
-
-        fetchOne("REPLACE INTO localSettings(key, value) VALUES('User', '"+userid+"');");
-    }
+login() {
+    Object userResult = fetchOne("select userid,fname,lname,email from user where userid='" + getListItemValue() + "';");
+    User user = new User(userResult.get(0),userResult.get(1),userResult.get(2),userResult.get(3));
+    userid = userResult.get(0);
+    setUser(user);
+    username = userResult.get(1) + " " + userResult.get(2);
+    showTabGroup("control");
 }
 
-onEvent("user/usertab/login", "click", "login()");
-onEvent("user/usertab/guide", "click", "showTab(\"user/help\")");
+onEvent("user/usertab/users", "click", "login()");
 
 /*** SYNC ***/
 

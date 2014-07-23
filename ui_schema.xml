@@ -84,6 +84,8 @@
             <In_Progress>
               <In_Progress_List/>
             </In_Progress>
+          </Sample>
+          <Stage_1>
             <Stage_1>
               <Sample_ID/>
               <Sample_Type/>
@@ -100,6 +102,7 @@
               <Add_Location/>
               <Location_List/>
             </Location>
+          </Stage_1>
           <Heavy_Residue>
             <Heavy_Residue>
               <container1>
@@ -118,6 +121,7 @@
                   <Load/>
                 </child2>
               </container2>
+              <Process_Fractions/>
               <Heavy_Residue_List/>
             </Heavy_Residue>
             <Processed>
@@ -168,6 +172,7 @@
                   <Load/>
                 </child2>
               </container2>
+              <Sort/>
               <Sort_List/>
             </Samples>
             <To_Sort>
@@ -257,22 +262,6 @@
                   <Z/>
                 </child3>
               </container2>
-              <container3>
-                <child1>
-                  <Latitude/>
-                </child1>
-                <child2>
-                  <Longitude/>
-                </child2>
-              </container3>
-              <container4>
-                <child1>
-                  <Date_From/>
-                </child1>
-                <child2>
-                  <Date_To/>
-                </child2>
-              </container4>
               <Special_Find_Comment/>
               <Photo/>
               <attachPhoto/>
@@ -337,18 +326,15 @@
     </group>
     <group ref="user">
       <label>{User_List}</label>
-      <group ref="usertab">
+      <group ref="usertab" faims_scrollable="false">
         <label>{User_List}</label>
-        <select1 ref="users">
+        <select1 appearance="compact" ref="users">
           <label>{Users}:</label>
           <item>
             <label>placeholder</label>
             <value>placeholder</value>
           </item>
         </select1>
-        <trigger ref="login">
-          <label>Login</label>
-        </trigger>
       </group>
     </group>
     <group ref="control">
@@ -356,16 +342,16 @@
       <group ref="Home">
         <label>{Home}</label>
         <trigger ref="New_Sample">
-          <label>{Stage_1}</label>
+          <label>New {Sample}</label>
         </trigger>
         <trigger ref="Stage_1">
-          <label>{Stage_2}</label>
+          <label>{Stage_1}</label>
         </trigger>
         <trigger ref="Stage_2">
-          <label>{Stage_3}</label>
+          <label>{Stage_2}</label>
         </trigger>
         <trigger ref="Stage_3">
-          <label></label>
+          <label>{Stage_3}</label>
         </trigger>
       </group>
       <group ref="Samples" faims_scrollable="false">
@@ -399,13 +385,13 @@
             <value>placeholder</value>
           </item>
         </select1>
-        <group ref="container1" faims_style="orientation">
+        <group ref="container2" faims_style="orientation">
           <label></label>
           <group ref="child1" faims_style="even">
             <label></label>
-            <input ref="Delete">
+            <trigger ref="Delete">
               <label>{Delete}</label>
-            </input>
+            </trigger>
           </group>
           <group ref="child2" faims_style="even">
             <label></label>
@@ -423,12 +409,12 @@
         </select1>
       </group>
       <group ref="Control">
-        <label></label>
+        <label>Settings</label>
         <trigger ref="startsync">
-          <label></label>
+          <label>{Start_Syncing}</label>
         </trigger>
         <trigger ref="stopsync">
-          <label></label>
+          <label>{Stop_Syncing}</label>
         </trigger>
       </group>
     </group>
@@ -494,8 +480,11 @@
           </item>
         </select1>
       </group>
-      <group ref="Stage_1" faims_archent_type="Sample">
-        <label></label>
+    </group>
+    <group ref="Stage_1" faims_archent_type="Sample">
+      <label>{Stage_1}</label>
+      <group ref="Stage_1">
+        <label>{Sample}</label>
         <input ref="Sample_ID" faims_attribute_name="Sample ID" faims_attribute_type="freetext" faims_certainty="false" faims_annotation="false" faims_read_only="false">
           <label>{Sample_ID}</label>
         </input>
@@ -513,16 +502,16 @@
           <label>{Comment}</label>
         </input>
         <trigger ref="Sample_Processed">
-          <label></label>
+          <label>{Sample_Processed}</label>
         </trigger>
         <trigger ref="Next_Sample">
-          <label></label>
+          <label>{Next_Sample}</label>
         </trigger>
         <trigger ref="Return_To_List">
-          <label></label>
+          <label>{Return_To_List}</label>
         </trigger>
         <trigger ref="Stage_2_Processing">
-          <label></label>
+          <label>{Stage_2_Processing}</label>
         </trigger>
       </group>
       <group ref="Location" faims_scrollable="false">
@@ -583,6 +572,9 @@
             </trigger>
           </group>
         </group>
+        <trigger ref="Process_Fractions">
+          <label>{Process_Fractions}</label>
+        </trigger>
         <select1 appearance="compact" ref="Heavy_Residue_List" faims_certainty="false" faims_annotation="false" faims_read_only="false">
           <label></label>
           <item>
@@ -653,31 +645,31 @@
         </trigger>
       </group>
       <group ref="Sorting">
-        <label></label>
+        <label>{Sorting}</label>
         <trigger ref="Add_Artefact">
-          <label></label>
+          <label>Add {Artefact_Group}</label>
         </trigger>
         <trigger ref="Add_Special_Find">
-          <label></label>
+          <label>Add {Special_Find}</label>
         </trigger>
       </group>
       <group ref="Location" faims_scrollable="false">
-        <label></label>
+        <label>{Location}</label>
         <select1 ref="Location" faims_certainty="false" faims_annotation="false" faims_read_only="false">
-          <label></label>
+          <label>{Location}</label>
           <item>
             <label>placeholder</label>
             <value>placeholder</value>
           </item>
         </select1>
         <input ref="Location_Note" faims_certainty="false" faims_annotation="false" faims_read_only="false">
-          <label></label>
+          <label>{Location_Note}</label>
         </input>
         <trigger ref="Add_Location">
-          <label></label>
+          <label>{Add_Location}</label>
         </trigger>
         <select1 appearance="compact" ref="Location_List" faims_certainty="false" faims_annotation="false" faims_read_only="false">
-          <label></label>
+          <label>{List_Of_Locations}</label>
           <item>
             <label>placeholder</label>
             <value>placeholder</value>
@@ -686,9 +678,9 @@
       </group>
     </group>
     <group ref="Stage_3" faims_archent_type="Sample">
-      <label></label>
+      <label>{Stage_3}</label>
       <group ref="Samples" faims_scrollable="false">
-        <label></label>
+        <label>{Samples}</label>
         <group ref="container1" faims_style="orientation">
           <label></label>
           <group ref="child1" faims_style="even">
@@ -719,6 +711,9 @@
             </trigger>
           </group>
         </group>
+        <trigger ref="Sort">
+          <label>{Sort}</label>
+        </trigger>
         <select1 appearance="compact" ref="Sort_List" faims_certainty="false" faims_annotation="false" faims_read_only="false">
           <label></label>
           <item>
@@ -739,7 +734,7 @@
       </group>
       <group ref="Sorted" faims_scrollable="false">
         <label>{Sorted}</label>
-        <select1 appearance="compact" ref="Sorted_List">
+        <select1 appearance="compact" ref="Sorted_List" faims_certainty="false" faims_annotation="false">
           <label>{Sorted_List}</label>
           <item>
             <label>placeholder</label>
@@ -752,7 +747,7 @@
     <!-- ArchEnt: ARTEFACT_GROUP-->
     <group faims_archent_type="Artefact Group" ref="Artefact_Group">
       <label>{Artefact_Group}</label>
-      <group ref="Artefact_Group_GeneralInformation">
+      <group ref="Artefact_Group">
         <label>{Artefact_Group}</label>
         <group faims_style="orientation" ref="container1">
           <label/>
@@ -803,19 +798,19 @@
           <group faims_style="even" ref="child1">
             <label/>
             <input faims_attribute_name="Artefact X" faims_attribute_type="measure" faims_read_only="false" ref="X">
-              <label>X</label>
+              <label>{X}</label>
             </input>
           </group>
           <group faims_style="even" ref="child2">
             <label/>
             <input faims_attribute_name="Artefact Y" faims_attribute_type="measure" faims_read_only="false" ref="Y">
-              <label>Y</label>
+              <label>{Y}</label>
             </input>
           </group>
           <group faims_style="even" ref="child3">
             <label/>
             <input faims_attribute_name="Artefact Z" faims_attribute_type="measure" faims_read_only="false" ref="Z">
-              <label>Z</label>
+              <label>{Z}</label>
             </input>
           </group>
         </group>
@@ -840,14 +835,14 @@
           </item>
         </select>
         <trigger ref="attachPhoto">
-          <label>Take Picture</label>
+          <label>{Take_Picture}</label>
         </trigger>
         <select ref="Audio" faims_attribute_name="Audio" faims_attribute_type="freetext" faims_annotation="false" faims_certainty="false" faims_sync="true" type="file">
-            <label>{Attached_Audio_Files}</label>
-            <item>
-                <label>placeholder</label>
-                <value>placeholder</value>
-            </item>
+          <label>{Attached_Audio_Files}</label>
+          <item>
+            <label>placeholder</label>
+            <value>placeholder</value>
+          </item>
         </select>
         <trigger ref="attachAudio">
           <label>{Record_Audio}</label>
@@ -863,7 +858,7 @@
           <label>{Record_Video}</label>
         </trigger>
         <trigger ref="viewattached">
-          <label>View Attached Files</label>
+          <label>{View_Attached_Files}</label>
         </trigger>
         <trigger ref="Update">
           <label>Save {Artefact_Group}</label>
@@ -883,7 +878,7 @@
     <!-- ArchEnt: SPECIAL_FIND -->
     <group faims_archent_type="Special Find" ref="Special_Find">
       <label>{Special_Find}</label>
-      <group ref="Special_Find_GeneralInformation">
+      <group ref="Special_Find">
         <label>{Special_Find}</label>
         <group faims_style="orientation" ref="container1">
           <label/>
@@ -940,36 +935,6 @@
             </input>
           </group>
         </group>
-        <group faims_style="orientation" ref="container3">
-          <label/>
-          <group faims_style="even" ref="child1">
-            <label/>
-            <input faims_attribute_name="Latitude" faims_attribute_type="measure" faims_read_only="false" ref="Latitude">
-              <label>Latitude</label>
-            </input>
-          </group>
-          <group faims_style="even" ref="child2">
-            <label/>
-            <input faims_attribute_name="Longitude" faims_attribute_type="measure" faims_read_only="false" ref="Longitude">
-              <label>Longitude</label>
-            </input>
-          </group>
-        </group>
-        <group faims_style="orientation" ref="container4">
-          <label/>
-          <group faims_style="even" ref="child1">
-            <label/>
-            <input faims_attribute_name="Date From" faims_attribute_type="measure" faims_read_only="false" ref="Date_From">
-              <label>Date From</label>
-            </input>
-          </group>
-          <group faims_style="even" ref="child2">
-            <label/>
-            <input faims_attribute_name="Date To" faims_attribute_type="measure" faims_read_only="false" ref="Date_To">
-              <label>Date To</label>
-            </input>
-          </group>
-        </group>
         <input faims_attribute_name="Special Find Comment" faims_attribute_type="freetext" faims_certainty="false" faims_read_only="false" ref="Special_Find_Comment">
           <label>{Special_Find} Comment</label>
         </input>
@@ -981,7 +946,7 @@
           </item>
         </select>
         <trigger ref="attachPhoto">
-          <label>Take Picture</label>
+          <label>{Take_Picture}</label>
         </trigger>
         <select ref="Audio" faims_attribute_name="Audio" faims_attribute_type="freetext" faims_annotation="false" faims_certainty="false" faims_sync="true" type="file">
             <label>{Attached_Audio_Files}</label>
@@ -1004,7 +969,7 @@
           <label>{Record_Video}</label>
         </trigger>
         <trigger ref="viewattached">
-          <label>View Attached Files</label>
+          <label>{View_Attached_Files}</label>
         </trigger>
         <trigger ref="Update">
           <label>Save {Special_Find}</label>
