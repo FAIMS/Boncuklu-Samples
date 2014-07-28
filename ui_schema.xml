@@ -9,7 +9,7 @@
     <!--model lists user interface tabgroups, tabs and content of tabs-->
     <model>
       <instance>
-        <faims id="Boncuklu">
+        <faims id="Boncuklu Samples">
           <style>
             <orientation>
               <orientation/>
@@ -62,6 +62,7 @@
           </control>
           <Sample>
             <Collected_Sample>
+              <Sample_ID/>
               <container1>
                 <child1>
                   <Site_Code/>
@@ -69,14 +70,44 @@
                 <child2>
                   <Context_ID/>
                 </child2>
-                <child3>
-                  <Sample_ID/>
-                </child3>
               </container1>
               <Sample_Type/>
               <Date_Collected/>
-              <Float/>
-              <Wet_Sieve/>
+              <container2>
+                <child1>
+                  <Created_by/>
+                </child1>
+                <child2>
+                  <Created_date/>
+                </child2>
+              </container2>
+              <container3>
+                <child1>
+                  <Modified_by/>
+                </child1>
+                <child2>
+                  <Modified_date/>
+                </child2>
+              </container3>
+              <Update_And_Close/>
+              <container4>
+                <child1>
+                  <Update_And_New/>
+                </child1>
+                <child2>
+                  <Update_And_Duplicate/>
+                </child2>
+              </container4>
+              <Delete/>
+              <guide1/>
+              <container5>
+                <child1>
+                  <Float/>
+                </child1>
+                <child2>
+                  <Wet_Sieve/>
+                </child2>
+              </container5>
             </Collected_Sample>
             <Processed>
               <Processed_List/>
@@ -88,10 +119,52 @@
           <Stage_1>
             <Stage_1>
               <Sample_ID/>
+              <container1>
+                <child1>
+                  <Split_From/>
+                </child1>
+                <child2>
+                  <Collection_Date/>
+                </child2>
+              </container1>
               <Sample_Type/>
               <Volume/>
               <Comment/>
+              <container2>
+                <child1>
+                  <Processed_Date/>
+                </child1>
+                <child2>
+                  <Supervisor/>
+                </child2>
+              </container2>
+              <container3>
+                <child1>
+                  <Created_by/>
+                </child1>
+                <child2>
+                  <Created_date/>
+                </child2>
+              </container3>
+              <container4>
+                <child1>
+                  <Modified_by/>
+                </child1>
+                <child2>
+                  <Modified_date/>
+                </child2>
+              </container4>
               <Sample_Processed/>
+              <Update_And_Close/>
+              <container5>
+                <child1>
+                  <Update_And_New/>
+                </child1>
+                <child2>
+                  <Duplicate/>
+                </child2>
+              </container5>
+              <Delete/>
               <Next_Sample/>
               <Return_To_List/>
               <Stage_2_Processing/>
@@ -132,7 +205,7 @@
             </In_Progress>
           </Heavy_Residue>
           <Stage_2>
-            <Sample_Fraction>
+            <Stage_2>
               <Sample_ID/>
               <Fraction_Size/>
               <Volume/>
@@ -142,7 +215,7 @@
               <Fraction_Processed/>
               <Return_To_List/>
               <Add_New_Fraction/>
-            </Sample_Fraction>
+            </Stage_2>
             <Sorting>
               <Add_Artefact/>
               <Add_Special_Find/>
@@ -279,25 +352,18 @@
         </faims>
       </instance>
       <!-- Insert nodeset bindings here -->
-      <bind nodeset="/faims/Artefact_Group/Artefact_Group_GeneralInformation/container2/child1/Artefact_Quantity" type="decimal"/>
-      <bind nodeset="/faims/Artefact_Group/Artefact_Group_GeneralInformation/container2/child2/Artefact_Weight" type="decimal"/>
+      <bind nodeset="/faims/Artefact_Group/Artefact_Group/container2/child1/Artefact_Quantity" type="decimal"/>
+      <bind nodeset="/faims/Artefact_Group/Artefact_Group/container2/child2/Artefact_Weight" type="decimal"/>
+      <bind nodeset="/faims/Artefact_Group/Artefact_Group/container3/child1/X" type="decimal"/>
+      <bind nodeset="/faims/Artefact_Group/Artefact_Group/container3/child2/Y" type="decimal"/>
+      <bind nodeset="/faims/Artefact_Group/Artefact_Group/container3/child3/Z" type="decimal"/>
       <bind nodeset="/faims/Artefact_Group/Artefact_Group_GeneralInformation/Artefact_Group_Comment" type="string"/>
-      <bind nodeset="/faims/Artefact_Group/Artefact_Group_GeneralInformation/container3/child1/X" type="decimal"/>
-      <bind nodeset="/faims/Artefact_Group/Artefact_Group_GeneralInformation/container3/child2/Y" type="decimal"/>
-      <bind nodeset="/faims/Artefact_Group/Artefact_Group_GeneralInformation/container3/child3/Z" type="decimal"/>
-      <bind nodeset="/faims/Sample/Sample_GeneralInformation/container1/child3/Sample_ID" type="decimal"/>
-      <bind nodeset="/faims/Sample/Sample_GeneralInformation/Sample_Volume" type="decimal"/>
-      <bind nodeset="/faims/Sample/Sample_GeneralInformation/container2/child1/X" type="decimal"/>
-      <bind nodeset="/faims/Sample/Sample_GeneralInformation/container2/child2/Y" type="decimal"/>
-      <bind nodeset="/faims/Sample/Sample_GeneralInformation/container2/child3/Z" type="decimal"/>
-      <bind nodeset="/faims/Sample/Sample_GeneralInformation/container3/child2/Sample_Comments" type="string"/>
-      <bind nodeset="/faims/Special_Find/Special_Find_GeneralInformation/container2/child1/X" type="decimal"/>
-      <bind nodeset="/faims/Special_Find/Special_Find_GeneralInformation/container2/child2/Y" type="decimal"/>
-      <bind nodeset="/faims/Special_Find/Special_Find_GeneralInformation/container2/child3/Z" type="decimal"/>
-      <bind nodeset="/faims/Special_Find/Special_Find_GeneralInformation/container3/child1/Latitude" type="decimal"/>
-      <bind nodeset="/faims/Special_Find/Special_Find_GeneralInformation/container3/child2/Longitude" type="decimal"/>
-      <bind nodeset="/faims/Special_Find/Special_Find_GeneralInformation/container4/child1/Date_From" type="decimal"/>
-      <bind nodeset="/faims/Special_Find/Special_Find_GeneralInformation/container4/child2/Date_To" type="decimal"/>
+      <bind nodeset="/faims/Stage_1/Stage_1/Volume" type="decimal"/>
+      <bind nodeset="/faims/Stage_2/Stage_2/Volume" type="decimal"/>
+      <bind nodeset="/faims/Stage_2/Stage_2/Weight" type="decimal"/>
+      <bind nodeset="/faims/Special_Find/Special_Find/container2/child1/X" type="decimal"/>
+      <bind nodeset="/faims/Special_Find/Special_Find/container2/child2/Y" type="decimal"/>
+      <bind nodeset="/faims/Special_Find/Special_Find/container2/child3/Z" type="decimal"/>
       <bind nodeset="/faims/Special_Find/Special_Find_GeneralInformation/Special_Find_Description" type="string"/>
       <bind nodeset="/faims/Special_Find/Special_Find_GeneralInformation/Special_Find_Comment" type="string"/>
     </model>
@@ -342,7 +408,7 @@
       <group ref="Home">
         <label>{Home}</label>
         <trigger ref="New_Sample">
-          <label>New {Sample}</label>
+          <label>Enter New {Sample}</label>
         </trigger>
         <trigger ref="Stage_1">
           <label>{Stage_1}</label>
@@ -422,6 +488,9 @@
       <label>{Sample}</label>
       <group ref="Collected_Sample">
         <label>{Collected_Sample}</label>
+        <input ref="Sample_ID" faims_attribute_name="Sample ID" faims_attribute_type="freetext" faims_annotation="false" faims_read_only="false">
+          <label>{Sample_ID}</label>
+        </input>
         <group ref="container1" faims_style="orientation">
           <label></label>
           <group ref="child1" faims_style="even">
@@ -432,18 +501,12 @@
           </group>
           <group ref="child2" faims_style="even">
             <label></label>
-            <input ref="Context_ID" faims_attribute_name="Context ID" faims_attribute_type="freetext" faims_certainty="false" faims_annotation="false" faims_read_only="false">
+            <input ref="Context_ID" faims_attribute_name="Context ID" faims_attribute_type="freetext" faims_annotation="false" faims_read_only="false">
               <label>{Context_ID}</label>
             </input>
           </group>
-          <group ref="child3" faims_style="even">
-            <label></label>
-            <input ref="Sample_ID" faims_attribute_name="Sample ID" faims_attribute_type="freetext" faims_certainty="false" faims_annotation="false" faims_read_only="false">
-              <label>{Sample_ID}</label>
-            </input>
-          </group>
         </group>
-        <select1 ref="Sample_Type" faims_attribute_name="Sample Type" faims_attribute_type="vocab" faims_certainty="false" faims_annotation="false" faims_read_only="false">
+        <select1 ref="Sample_Type" faims_attribute_name="Sample Type" faims_attribute_type="vocab" faims_annotation="true" faims_read_only="false">
           <label>{Sample_Type}</label>
           <item>
             <label>placeholder</label>
@@ -453,12 +516,79 @@
         <input ref="Date_Collected" faims_attribute_name="Date Collected" faims_attribute_type="freetext" faims_certainty="true" faims_annotation="true" faims_read_only="false">
           <label>{Date_Collected}</label>
         </input>
-        <trigger ref="Float">
-          <label>{Float}</label>
+        <group ref="container2" faims_style="orientation">
+          <label></label>
+          <group ref="child1" faims_style="even">
+            <label></label>
+            <input ref="Created_by" faims_certainty="false" faims_annotation="false" faims_read_only="true">
+              <label>{Created_by}</label>
+            </input>
+          </group>
+          <group ref="child2" faims_style="even">
+            <label></label>
+            <input ref="Created_date" faims_certainty="false" faims_annotation="false" faims_read_only="true">
+              <label>{Created_date}</label>
+            </input>
+          </group>
+        </group>
+        <group ref="container3" faims_style="orientation">
+          <label></label>
+          <group ref="child1" faims_style="even">
+            <label></label>
+            <input ref="Modified_by" faims_certainty="false" faims_annotation="false" faims_read_only="true">
+              <label>{Modified_by}</label>
+            </input>
+          </group>
+          <group ref="child2" faims_style="even">
+            <label></label>
+            <input ref="Modified_date" faims_certainty="false" faims_annotation="false" faims_read_only="true">
+              <label>{Modified_date}</label>
+            </input>
+          </group>
+        </group>
+        <trigger ref="Update_And_Close">
+          <label>{Save_And_Close}</label>
         </trigger>
-        <trigger ref="Wet_Sieve">
-          <label>{Wet_Sieve}</label>
+        <group ref="container4" faims_style="orientation">
+          <label></label>
+          <group ref="child1" faims_style="even">
+            <label></label>
+            <trigger ref="Update_And_New">
+              <label>{Save_And_New}</label>
+            </trigger>
+          </group>
+          <group ref="child2" faims_style="even">
+            <label></label>
+            <trigger ref="Update_And_Duplicate">
+              <label>{Save_And_Duplicate}</label>
+            </trigger>
+          </group>
+        </group>
+        <trigger ref="Delete">
+          <label>{Delete}</label>
         </trigger>
+        <select1 ref="guide1" appearance="compact" faims_annotation="false" faims_certainty="false" faims_read_only="false">
+          <label></label>
+          <item>
+            <label>Stage 1 Processing</label>
+            <value>Stage 1 Processing</value>
+          </item>
+        </select1>
+        <group ref="container5" faims_style="orientation">
+          <label></label>
+          <group ref="child1" faims_style="even">
+            <label></label>
+            <trigger ref="Float">
+              <label>{Float}</label>
+            </trigger>
+          </group>
+          <group ref="child2" faims_style="even">
+            <label></label>
+            <trigger ref="Wet_Sieve">
+              <label>{Wet_Sieve}</label>
+            </trigger>
+          </group>
+        </group>
       </group>
       <group ref="Processed" faims_scrollable="false">
         <label>{Processed}</label>
@@ -488,6 +618,21 @@
         <input ref="Sample_ID" faims_attribute_name="Sample ID" faims_attribute_type="freetext" faims_certainty="false" faims_annotation="false" faims_read_only="false">
           <label>{Sample_ID}</label>
         </input>
+        <group ref="container1" faims_style="orientation">
+          <label></label>
+          <group ref="child1" faims_style="even">
+            <label></label>
+            <input ref="Split_From" faims_certainty="false" faims_annotation="false" faims_read_only="true">
+              <label>{Split_From}</label>
+            </input>
+          </group>
+          <group ref="child2" faims_style="even">
+            <label></label>
+            <input ref="Collection_Date" faims_certainty="false" faims_annotation="false" faims_read_only="true">
+              <label>{Collection_Date}</label>
+            </input>
+          </group>
+        </group>
         <select1 ref="Sample_Type" faims_attribute_name="Sample Type" faims_attribute_type="vocab" faims_certainty="false" faims_annotation="false" faims_read_only="false">
           <label>{Sample_Type}</label>
           <item>
@@ -501,8 +646,74 @@
         <input ref="Comment" faims_attribute_name="Sample Comments" faims_attribute_type="freetext" faims_certainty="true" faims_annotation="false" faims_read_only="false">
           <label>{Comment}</label>
         </input>
+        <group ref="container2" faims_style="orientation">
+          <label></label>
+          <group ref="child1" faims_style="even">
+            <label></label>
+            <input ref="Processed_Date" faims_certainty="false" faims_annotation="false" faims_read_only="false">
+              <label>{Processed_Date}</label>
+            </input>
+          </group>
+          <group ref="child2" faims_style="even">
+            <label></label>
+            <input ref="Supervisor" faims_certainty="false" faims_annotation="false" faims_read_only="false">
+              <label>{Supervisor}</label>
+            </input>
+          </group>
+        </group>
+        <group ref="container3" faims_style="orientation">
+          <label></label>
+          <group ref="child1" faims_style="even">
+            <label></label>
+            <input ref="Created_by" faims_certainty="false" faims_annotation="false" faims_read_only="true">
+              <label>{Created_by}</label>
+            </input>
+          </group>
+          <group ref="child2" faims_style="even">
+            <label></label>
+            <input ref="Created_date" faims_certainty="false" faims_annotation="false" faims_read_only="true">
+              <label>{Created_date}</label>
+            </input>
+          </group>
+        </group>
+        <group ref="container4" faims_style="orientation">
+          <label></label>
+          <group ref="child1" faims_style="even">
+            <label></label>
+            <input ref="Modified_by" faims_certainty="false" faims_annotation="false" faims_read_only="true">
+              <label>{Modified_by}</label>
+            </input>
+          </group>
+          <group ref="child2" faims_style="even">
+            <label></label>
+            <input ref="Modified_date" faims_certainty="false" faims_annotation="false" faims_read_only="true">
+              <label>{Modified_date}</label>
+            </input>
+          </group>
+        </group>
         <trigger ref="Sample_Processed">
           <label>{Sample_Processed}</label>
+        </trigger>
+        <trigger ref="Update_And_Close">
+          <label>{Save_And_Close}</label>
+        </trigger>
+        <group ref="container5" faims_style="orientation">
+          <label></label>
+          <group ref="child1" faims_style="even">
+            <label></label>
+            <trigger ref="Update_And_New">
+              <label>{Save_And_New}</label>
+            </trigger>
+          </group>
+          <group ref="child2" faims_style="even">
+            <label></label>
+            <trigger ref="Duplicate">
+              <label>{Save_And_Duplicate}</label>
+            </trigger>
+          </group>
+        </group>
+        <trigger ref="Delete">
+          <label>{Delete}</label>
         </trigger>
         <trigger ref="Next_Sample">
           <label>{Next_Sample}</label>
@@ -516,7 +727,7 @@
       </group>
       <group ref="Location" faims_scrollable="false">
         <label>{Location}</label>
-        <select1 ref="Location" faims_certainty="false" faims_annotation="false" faims_read_only="false">
+        <select1 ref="Location" faims_certainty="false" faims_annotation="true" faims_read_only="false">
           <label>{Location}</label>
           <item>
             <label>placeholder</label>
@@ -606,7 +817,7 @@
     </group>
     <group ref="Stage_2" faims_archent_type="Sample">
       <label>{Stage_2}</label>
-      <group ref="Sample_Fraction">
+      <group ref="Stage_2">
         <label>{Sample_Fraction}</label>
         <input ref="Sample_ID" faims_attribute_name="Sample ID" faims_attribute_type="freetext" faims_certainty="false" faims_annotation="false" faims_read_only="false">
           <label>{Sample_ID}</label>
@@ -655,7 +866,7 @@
       </group>
       <group ref="Location" faims_scrollable="false">
         <label>{Location}</label>
-        <select1 ref="Location" faims_certainty="false" faims_annotation="false" faims_read_only="false">
+        <select1 ref="Location" faims_certainty="false" faims_annotation="true" faims_read_only="false">
           <label>{Location}</label>
           <item>
             <label>placeholder</label>
@@ -919,19 +1130,19 @@
           <group faims_style="even" ref="child1">
             <label/>
             <input faims_attribute_name="Special Find X" faims_attribute_type="measure" faims_read_only="false" ref="X">
-              <label>X</label>
+              <label>{X}</label>
             </input>
           </group>
           <group faims_style="even" ref="child2">
             <label/>
             <input faims_attribute_name="Special Find Y" faims_attribute_type="measure" faims_read_only="false" ref="Y">
-              <label>Y</label>
+              <label>{Y}</label>
             </input>
           </group>
           <group faims_style="even" ref="child3">
             <label/>
             <input faims_attribute_name="Special Find Z" faims_attribute_type="measure" faims_read_only="false" ref="Z">
-              <label>Z</label>
+              <label>{Z}</label>
             </input>
           </group>
         </group>

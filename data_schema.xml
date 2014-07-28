@@ -4,7 +4,11 @@
   <RelationshipElement name="Location" type="bidirectional">
     <description>Implements a 1:N between a sample and it's locations</description>
   </RelationshipElement>
-
+  <RelationshipElement name="Split" type="hierarchical">
+    <description>Implements a directed relationship between two samples</description>
+    <parent>Split From</parent>
+    <child>Split To</child>
+  </RelationshipElement>
   <!--SAMPLE-->
   <ArchaeologicalElement name="Sample">
     <description>Deposit samples or samples of building elements recovered from this Context for the purpose of further analysis or ongoing reference.</description>
@@ -192,10 +196,10 @@
   <!-- SAMPLE LOCATION -->
   <ArchaeologicalElement name="Sample Location">
     <description></description>
-    <property name="Sample ID" type="freetext">
+    <property name="Sample ID" type="freetext" isIdentifier="true">
       <description/>
     </property>
-    <property name="Location" type="enum">
+    <property name="Location" type="enum" isIdentifier="true">
       <description/>
       <lookup>
         <term> {0No_Observation}
@@ -210,7 +214,7 @@
         <term> {Export_Turkey}
           <description/>
         </term>
-        <term> {zaOther}
+        <term> {zOther_Location}
           <description/>
         </term>
       </lookup>

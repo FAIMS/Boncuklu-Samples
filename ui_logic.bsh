@@ -90,28 +90,46 @@ showSampleDetails(){
 onEvent("Sample/Collected_Sample/Float", "click", "showTabGroup(\"Stage_1\");");
 onEvent("Sample/Collected_Sample/Wet_Sieve", "click", "showTabGroup(\"Stage_1\");");
 
-onEvent("Stage_1/Stage_1/Sample_Processed", "click", "showToast(\"Marks this sample as processed.\");");
+onEvent("Stage_1/Stage_1/Sample_Processed", "click", "processSample();");
 onEvent("Stage_1/Stage_1/Next_Sample", "click", "showToast(\"Creates a new record with MAGIC!\");");
 onEvent("Stage_1/Stage_1/Return_To_List", "click", "showTabGroup(\"Sample\");");
 onEvent("Stage_1/Stage_1/Stage_2_Processing", "click", "showTabGroup(\"Heavy_Residue\");");
-onEvent("Stage_1/Location/Add_Location", "click", "showToast(\"Adds a Sample Location related to this sample.\");");
 
 onEvent("Heavy_Residue/Heavy_Residue/Process_Fractions", "click", "showTabGroup(\"Stage_2\");");
 
-onEvent("Stage_2/Sample_Fraction/Fraction_Processed", "click", "showToast(\"Marks this fraction as processed.\");");
-onEvent("Stage_2/Sample_Fraction/Return_To_List", "click", "showTabGroup(\"Heavy_Residue\");");
-onEvent("Stage_2/Sample_Fraction/Add_New_Fraction", "click", "showToast(\"Not sure what this one does.\");");
+onEvent("Stage_2/Stage_2/Fraction_Processed", "click", "showToast(\"Marks this fraction as processed.\");");
+onEvent("Stage_2/Stage_2/Return_To_List", "click", "showTabGroup(\"Heavy_Residue\");");
+onEvent("Stage_2/Stage_2/Add_New_Fraction", "click", "showToast(\"Not sure what this one does.\");");
 onEvent("Stage_2/Sorting/Add_Artefact", "click", "newArtefactGroup();");
 onEvent("Stage_2/Sorting/Add_Special_Find", "click", "newSpecialFind();");
-onEvent("Stage_2/Location/Add_Location", "click", "showToast(\"Adds a Sample Location related to this sample.\");");
 
 onEvent("Stage_3/Samples/Sort", "click", "showToast(\"Not sure what this one does.\");");
+
+onEvent("Stage_1/Location", "show", "loadRelatedLocations(\"Stage_1\");");
+onEvent("Stage_2/Location", "show", "loadRelatedLocations(\"Stage_2\");");
+onEvent("Stage_1/Location/Add_Location", "delayclick", "saveSample(\"addSampleLocation(\\\"Stage_1\\\");\");");
+onEvent("Stage_2/Location/Add_Location", "delayclick", "saveSample(\"addSampleLocation(\\\"Stage_2\\\");\");");
+onEvent("Stage_1/Location/Location_List", "click", "showLocationDetails();");
+onEvent("Stage_2/Location/Location_List", "click", "showLocationDetails();");
+
+onEvent("Stage_1/Stage_1/Update_And_Close", "click", "saveSample(\"cancelTabGroup(\\\"Stage_1\\\", false);\");");
+onEvent("Stage_1/Stage_1/Update_And_New", "click", "saveSample(\"newSample();\");");
+onEvent("Stage_1/Stage_1/Duplicate", "click", "saveSample(\"sample_id = null;\");");
+onEvent("Stage_1/Stage_1/Delete", "click", "deleteSample();");
+
 
 String sample_id = null;
 
 newSample(){
     sample_id = null;
     newTabGroup("Sample");
+
+    date = fetchOne("select datetime(CURRENT_TIMESTAMP, 'localtime')");
+    setFieldValue("Sample/Collected_Sample/Site_Code","BK" + date.get(0).charAt(2) + date.get(0).charAt(3));
+    setFieldValue("Sample/Collected_Sample/Created_by", username);
+    setFieldValue("Sample/Collected_Sample/Created_date", date.get(0));
+    setFieldValue("Sample/Collected_Sample/Modified_by", username);
+    setFieldValue("Sample/Collected_Sample/Modified_date", date.get(0));
 }
 
 loadSampleFrom(archent_id) {
@@ -121,6 +139,15 @@ loadSampleFrom(archent_id) {
         return;
     }
     showTabGroup("Sample", sample_id);
+    Object foo = fetchOne("select fname || ' ' || lname from user join archentity using (userid) where uuid = '"+sample_id+"' group by uuid having min(aenttimestamp)");
+    setFieldValue("Sample/Collected_Sample/Created_by", foo.get(0));
+    Object bar = fetchOne("select uuid, datetime(aentTimestamp, 'localtime')  from archentity where uuid = '"+sample_id+"' group by uuid having min(aenttimestamp);");
+    setFieldValue("Sample/Collected_Sample/Created_date", bar.get(1));
+
+    Object foo2 = fetchOne("select fname || ' ' || lname from user join archentity using (userid) where uuid = '"+sample_id+"' group by uuid having max(aenttimestamp)");
+    setFieldValue("Sample/Collected_Sample/Modified_by", foo1.get(0));
+    Object bar2 = fetchOne("select uuid, datetime(aentTimestamp, 'localtime')  from archentity where uuid = '"+sample_id+"' group by uuid having max(aenttimestamp);");
+    setFieldValue("Sample/Collected_Sample/Modified_date", bar1.get(1));
 }
 
 loadSample(archent_id) {
@@ -140,7 +167,7 @@ saveSample(String callback) {
     saveTabGroup("Sample", sample_id, null, null, "sample_id = getLastSavedRecordId();" + callback);
 }
 
-deleteSample(){
+deleteSample() {
     if (!isNull(sample_id)) {
         showAlert("Confirm Deletion", "Press OK to Delete this Sample!", "reallyDeleteSample()", "doNotDelete()");
     } else {
@@ -148,14 +175,87 @@ deleteSample(){
     }
 }
 
-reallyDeleteSample(){
+reallyDeleteSample() {
     deleteArchEnt(sample_id);
     showTabGroup("Sample");
     cancelTabGroup("Sample", false);
 }
 
 loadSampleAttributes(){
-    // INSERT ATTRIBUTES
+    populateDropDown("Sample/Collected_Sample/Sample_Type", makeVocab("Sample Type"));
+    populateDropDown("Stage_1/Stage_1/Sample_Type", makeVocab("Sample Type"));
+    populateDropDown("Stage_2/Stage_2/Fraction_Size", makeVocab("Sample Type"));
+    populateDropDown("Stage_2/Stage_2/Destination", makeVocab("Destination"));
+    populateDropDown("Stage_1/Location/Location", makeVocab("Location"));
+    populateDropDown("Stage_2/Location/Location", makeVocab("Location"));
+}
+
+addSampleLocation(String stage) {
+    Object foo = fetchOne("select vocabName from vocabulary where vocabid = '"+getFieldValue(stage + "/Location/Location")+"';");   
+    if(foo.get(0).equals("{0No_Observation}")) {
+        showToast("Please select a valid location.");
+        return;
+    }
+
+    if(foo.get(0).equals("{zOther_Location}") && isNull(getFieldValue(stage + "/Location/Location_Note"))) {
+        showToast("Please fill in the Location Note.");
+        return;
+    }
+
+    String sample_location_id = null;
+
+    List attributes = createAttributeList();
+    attributes.add(createEntityAttribute("Sample ID", getFieldValue(stage + "/" + stage + "/Sample_ID"), null, null, null));
+    attributes.add(createEntityAttribute("Location", null, getFieldValue(stage + "/Location/Location"), null, null));
+    attributes.add(createEntityAttribute("Location Note", getFieldValue(stage + "/Location/Location_Note"), null, null, null));
+    saveArchEnt(sample_location_id, "Sample Location", null, attributes);
+    sample_location_id = getLastSavedRecordId();
+    saveEntitiesToRel("Location", sample_id, sample_location_id);
+    loadRelatedLocations(stage);
+}
+
+showLocationDetails() {
+    String sample_location_id = getListItemValue();
+    
+    foo = fetchOne("select group_concat(response, '\n') from ( select attributename || ': ' || coalesce(vocabname, freetext) as response " +
+        "from (select uuid from latestnondeletedarchent join latestnondeletedaentreln using (uuid) where uuid = "+sample_location_id+") " +
+        "join latestnondeletedaentvalue using (uuid) join attributekey using (attributeid) left outer join vocabulary using (attributeid, vocabid) " +
+            "where attributename in ('Location', 'Location Note')  " +
+                "and coalesce(vocabname, freetext) is not null " +
+        "group by uuid, attributename " +
+        "order by case attributename when 'Location' then 1 when 'Location Note' then 2 end); ");
+    if (!isNull(foo)){
+        showToast(foo.get(0));
+    }
+}
+
+loadRelatedLocations(String stage) {
+    Object locations = new ArrayList();
+    if (!isNull(sample_id)){
+        locations = fetchAll("select uuid, group_concat(coalesce(measure || ' ' || vocabname || '(' ||freetext||')',  measure || ' (' || freetext ||')',  vocabname || ' (' || freetext ||')',  measure || ' ' || vocabname ,  vocabname || ' (' || freetext || ')',  measure || ' (' || freetext || ')',  measure,  vocabname,  freetext,  measure,  vocabname,  freetext), ' | ') as response, valuetimestamp\n"+
+            "  FROM (  SELECT uuid, attributeid, vocabid, attributename, vocabname, measure, freetext, certainty, attributetype, valuetimestamp, aenttypename\n"+
+            "            FROM latestNonDeletedArchentIdentifiers\n"+
+            "           WHERE aenttypename = 'Sample Location'\n"+
+            "             AND uuid in (select uuid\n"+
+            "                            FROM latestNonDeletedAentReln\n"+
+            "                           where relationshipid in (select relationshipid\n"+
+            "                                                      FROM latestNonDeletedAentReln\n"+
+            "                                                      JOIN relationship using (relationshipid)\n"+
+            "                                                      JOIN relntype using (relntypeid)\n"+
+            "                                                     where uuid = "+sample_id+"\n"+
+            "                                                       and relntypeName = 'Location')\n"+
+            "                             and uuid != "+sample_id+")\n"+
+            "        ORDER BY uuid, attributename ASC)\n"+
+            "group by uuid\n"+
+            "order by valuetimestamp desc, uuid, attributename;");
+    }
+    populateList(stage + "/Location/Location_List",  locations);
+}
+
+processSample() {
+    date = fetchOne("select datetime(CURRENT_TIMESTAMP, 'localtime')");
+    setFieldValue("Stage_1/Stage_1/Supervisor", username);
+    setFieldValue("Stage_1/Stage_1/Processed_Date", date.get(0));
 }
 
 /*** Artefact Group ***/
@@ -216,7 +316,7 @@ reallyDeleteArtefactGroup(){
     cancelTabGroup("Artefact_Group", false);
 }
 
-loadArtefactGroupAttributes(){
+loadArtefactGroupAttributes() {
     populateHierarchicalDropDown("Artefact_Group/Artefact_Group/Artefact_Class", "Artefact Class");
 }
 
