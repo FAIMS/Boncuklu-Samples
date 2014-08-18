@@ -7,10 +7,16 @@ setFileSyncEnabled(true);*/
 
 makeLocalID(){
     fetchOne("drop view if exists identifierAsSpreadsheet;");
-    fetchOne("create view identifierAsSpreadsheet as select uuid, group_concat(coalesce(measure || ' ' || vocabname || '(' ||freetext||')',  measure || ' (' || freetext ||')',  vocabname || ' (' || freetext ||')',  measure || ' ' || vocabname ,  vocabname || ' (' || freetext || ')',  measure || ' (' || freetext || ')',  measure,  vocabname,  freetext,  measure,  vocabname,  freetext), ' ') as response from latestNonDeletedArchentIdentifiers group by uuid ;");
+    fetchOne("drop view if exists aentrelnaent;");
+    fetchOne("create view identifierAsSpreadsheet as select uuid, group_concat(coalesce(measure || ' ' || vocabname || '(' ||freetext||')',  measure || ' (' || freetext ||')',  vocabname || ' (' || freetext ||')',  measure || ' ' || vocabname ,  vocabname || ' (' || freetext || ')',  measure || ' (' || freetext || ')',  measure,  vocabname,  freetext,  measure,  vocabname,  freetext), ' ') as response from latestNonDeletedArchentIdentifiers group by uuid order by case attributename when 'Sample ID' then 1 when 'Sample Type' then 2 else attributename end;");
+    fetchOne("create view aentrelnaent as select parent.uuid as parentuuid, parent.participatesverb as verb, child.uuid as uuid from (latestNonDeletedAentReln) parent join (latestNonDeletedAentReln join identifierAsSpreadsheet using (uuid)) child on (parent.relationshipid = child.relationshipid and parent.uuid != child.uuid) join latestNonDeletedRelationship using (relationshipid) join relntype using (relntypeid) order by relntimestamp desc");    
 }
 
+
+
+
 makeLocalID();
+stage1_id = null;
 
 /*** control ***/
 onEvent("control/Home/New_Sample", "click", "newSample()");
@@ -21,8 +27,8 @@ onEvent("control/Home/Stage_3", "click", "showTabGroup(\"Stage_3\");");
 onEvent("control/Samples", "show", "refreshSamples()");
 onEvent("control/Samples/Search", "click", "clearSearchSample()");
 onEvent("control/Samples/Search_Button", "click", "searchSample();");
-onEvent("control/Samples/Delete", "click", "sample_id = getFieldValue(\"control/Sample/Sample_DropDown\");deleteSample();");
-onEvent("control/Samples/Load", "click", "loadSampleFrom(getFieldValue(\"control/Sample/Sample_DropDown\"));");
+onEvent("control/Samples/Delete", "click", "sample_id = getFieldValue(\"control/Samples/Sample_DropDown\");deleteSample();");
+onEvent("control/Samples/Load", "click", "sample_id=getFieldValue(\"control/Samples/Sample_DropDown\");loadSampleFrom(sample_id);");
 onEvent("control/Samples/Sample_List", "click", "showSampleDetails();");
 
 refreshSamples() {
@@ -71,31 +77,38 @@ loadSearchAttributes() {
 
 showSampleDetails(){
     listID = getListItemValue();
+
+    showToast(listID);
     
     foo = fetchOne("select group_concat(response, '\n') from ( select attributename || ': ' || coalesce(vocabname, freetext) as response from ( " +
-        "select uuid from latestnondeletedarchent join latestnondeletedaentreln using (uuid)  " +
-            "where uuid = "+sample_id+")  " +
+        "select uuid from latestnondeletedarchent join latestnondeletedaentreln using (uuid)  " +        
+        "where uuid = "+sample_id+")  " +
         "join latestnondeletedaentvalue using (uuid)  " +
-            "join attributekey using (attributeid) left outer join vocabulary using (attributeid, vocabid)  " +
-                "where attributename in ('Sample ID', 'Sample Type')   " +
-            "and coalesce(vocabname, freetext) is not null  " +
+        "join attributekey using (attributeid) left outer join vocabulary using (attributeid, vocabid)  " +
+        "where attributename in ('Sample ID', 'Sample Type')   " +
+        "and coalesce(vocabname, freetext) is not null  " +
+        
         "group by uuid, attributename  " +
-        "order by case attributename when 'Sample ID' then 1 when 'Sample Type' end);");
+        "order by case attributename when 'Sample ID' then 1 else attributename end);");
     if (!isNull(foo)){
-        showToast(foo.get(0));
+        showToast(foo.get(0));  
     }
 }
 
 /*** Sample ***/
-onEvent("Sample/Collected_Sample/Float", "click", "showTabGroup(\"Stage_1\");");
-onEvent("Sample/Collected_Sample/Wet_Sieve", "click", "showTabGroup(\"Stage_1\");");
+onEvent("Sample/Collected_Sample/Float", "delayclick", "saveSample(\"sample_id = getLastSavedRecordId();createFloat()\")");
+onEvent("Sample/Collected_Sample/Wet_Sieve", "delayclick", "saveSample(\"sample_id = getLastSavedRecordId();createWetSieve()\")");
+onEvent("Sample/Collected_Sample/Update_And_Close", "delayclick", "saveSample(\"cancelTabGroup(\\\"Sample\\\", false)\")");
+onEvent("Sample/Collected_Sample/Update_And_New", "delayclick", "saveSample(\"newTabGroup(\\\"Sample\\\")\")");
+onEvent("Sample/Collected_Sample/Update_And_Duplicate", "delayclick", "saveSample(\"setFieldValue(\\\"Sample/Collected_Sample/Sample_ID\\\",\\\"\\\");sample_id=null;\")");
 
+onEvent("Sample/In_Progress","show","showSampleInProgress()");
 onEvent("Stage_1/Stage_1/Sample_Processed", "click", "processSample();");
-onEvent("Stage_1/Stage_1/Next_Sample", "click", "showToast(\"Creates a new record with MAGIC!\");");
-onEvent("Stage_1/Stage_1/Return_To_List", "click", "showTabGroup(\"Sample\");");
+onEvent("Stage_1/Stage_1/Next_Sample", "click", "saveStage1(\"nextStage1();\")");
+onEvent("Stage_1/Stage_1/Return_To_List", "click", "cancelTabGroup(\"Stage_1\",true);");
 onEvent("Stage_1/Stage_1/Stage_2_Processing", "click", "showTabGroup(\"Heavy_Residue\");");
 
-onEvent("Heavy_Residue/Heavy_Residue/Process_Fractions", "click", "showTabGroup(\"Stage_2\");");
+
 
 onEvent("Stage_2/Stage_2/Fraction_Processed", "click", "showToast(\"Marks this fraction as processed.\");");
 onEvent("Stage_2/Stage_2/Return_To_List", "click", "showTabGroup(\"Heavy_Residue\");");
@@ -107,15 +120,514 @@ onEvent("Stage_3/Samples/Sort", "click", "showToast(\"Not sure what this one doe
 
 onEvent("Stage_1/Location", "show", "loadRelatedLocations(\"Stage_1\");");
 onEvent("Stage_2/Location", "show", "loadRelatedLocations(\"Stage_2\");");
-onEvent("Stage_1/Location/Add_Location", "delayclick", "saveSample(\"addSampleLocation(\\\"Stage_1\\\");\");");
+onEvent("Stage_1/Location/Add_Location", "delayclick", "saveStage1(\"addSampleLocation(\\\"Stage_1\\\");\");");
 onEvent("Stage_2/Location/Add_Location", "delayclick", "saveSample(\"addSampleLocation(\\\"Stage_2\\\");\");");
 onEvent("Stage_1/Location/Location_List", "click", "showLocationDetails();");
 onEvent("Stage_2/Location/Location_List", "click", "showLocationDetails();");
 
-onEvent("Stage_1/Stage_1/Update_And_Close", "click", "saveSample(\"cancelTabGroup(\\\"Stage_1\\\", false);\");");
-onEvent("Stage_1/Stage_1/Update_And_New", "click", "saveSample(\"newSample();\");");
-onEvent("Stage_1/Stage_1/Duplicate", "click", "saveSample(\"sample_id = null;\");");
-onEvent("Stage_1/Stage_1/Delete", "click", "deleteSample();");
+onEvent("Stage_1/Stage_1/Update_And_Close", "delayclick", "saveStage1(\"cancelTabGroup(\\\"Stage_1\\\", false);\");");
+onEvent("Stage_1/Stage_1/Update_And_New", "delayclick", "saveStage1(\"newSample();\");");
+onEvent("Stage_1/Stage_1/Duplicate", "delayclick", "saveStage1(\"sample_id = null;\");");
+onEvent("Stage_1/Stage_1/Delete", "click", "deleteStage1();");
+
+onEvent("Sample/Processed", "show", "showSampleProccessed()");
+nothingFound = fetchAll("select null, 'Nothing Found'");
+onEvent("Sample/In_Progress/In_Progress_List", "click" ,"loadStage1FromList()");
+onEvent("Sample/Processed/Processed_List", "click" ,"loadStage1FromList()");
+onEvent("control", "load", "setSupervisor()");
+onEvent("Stage_1", "show", "stage1CreatedModifiedBy()");
+
+nextStage1(){
+    if (!isNull(sample_id)){
+    inProgress = fetchOne("select uuid, group_concat(response) from identifierAsSpreadsheet ias join aentrelnaent using (uuid) join latestnondeletedarchent using (uuid) join idealaent using (aenttypeid) join attributekey using (attributeid) left outer join latestnondeletedaentvalue using (uuid, attributeid)  where parentuuid = "+sample_id+" and attributename = 'Date Processed' and freetext is null group by uuid order by aenttimestamp limit 1;");
+    if (!isNull(inProgress)){
+        showToast("Loading: "+ inProgress.get(1));
+        stage1_id = inProgress.get(0);
+        showTabGroup("Stage_1", stage1_id);
+
+    } else {
+        showToast("No other stage 1s");
+    }
+
+    }
+    else {
+        showToast( "No parent sample");
+    }
+}
+
+deleteStage1(){
+    showToast("TODO");
+}
+
+saveStage1(String callback){
+    showToast("saving stage 1");
+    if (!isNull(stage1_id)) {
+        entity = fetchArchEnt(stage1_id);
+    }
+    saveTabGroup("Stage_1", stage1_id, null, null, "stage1_id = getLastSavedRecordId();" + callback);
+
+}
+
+stage1CreatedModifiedBy(){
+    createdBy = fetchOne("select aenttimestamp, fname || ' ' || lname from archentity join user using (userid) where uuid = "+stage1_id+" group by uuid having min(aenttimestamp)");
+    modifiedBy=fetchOne("select aenttimestamp, fname || ' ' || lname from archentity join user using (userid) where uuid = "+stage1_id+" group by uuid having max(aenttimestamp)");
+    if (!isNull(createdBy) && !isNull(modifiedBy)){
+        setFieldValue("Stage_1/Stage_1/Created_by", createdBy.get(1));
+        setFieldValue("Stage_1/Stage_1/Created_date", createdBy.get(0));
+        setFieldValue("Stage_1/Stage_1/Modified_by", modifiedBy.get(1));
+        setFieldValue("Stage_1/Stage_1/Modified_date", modifiedBy.get(0));
+    }
+}
+
+setSupervisor(){
+    setFieldValue("control/Control/Supervisor", username);
+
+}
+loadStage1FromList(){
+    loadingID = getListItemValue();
+    if (!isNull(loadingID))
+        stage1_id = loadingID;
+        showTabGroup("Stage_1",stage1_id);
+}
+showSampleInProgress(){
+
+    inProgressList = fetchAll("select uuid, group_concat(response) from identifierAsSpreadsheet ias join aentrelnaent using (uuid) join latestnondeletedarchent using (uuid) join idealaent using (aenttypeid) join attributekey using (attributeid) left outer join latestnondeletedaentvalue using (uuid, attributeid)  where parentuuid = "+sample_id+" and attributename = 'Date Processed' and freetext is null group by uuid;");
+    if (!isNull(inProgressList))
+        populateList("Sample/In_Progress/In_Progress_List", inProgressList);
+    else
+        populateList("Sample/In_Progress/In_Progress_List", nothingFound);
+}
+
+showSampleProccessed(){
+
+
+    processedList = fetchAll("select uuid, group_concat(response) from identifierAsSpreadsheet ias join aentrelnaent using (uuid) join latestnondeletedarchent using (uuid) join idealaent using (aenttypeid) join attributekey using (attributeid) left outer join latestnondeletedaentvalue using (uuid, attributeid)  where parentuuid = "+sample_id+" and attributename = 'Date Processed' and freetext is not null group by uuid;");
+    if (!isNull(processedList))
+        populateList("Sample/Processed/Processed_List", processedList);
+    else
+        populateList("Sample/Processed/Processed_List", nothingFound);
+    
+}
+
+createFloat() {
+
+    sample_id = getLastSavedRecordId();
+    float_id = null;
+/*
+1) save
+2) Create two sample records:
+    Record 1:
+        Collected Sample parent, float child.
+        setfieldvalue sample_type: float
+        special number: FLOT1400 (make decimal entry)
+        write sample_id and collection date from collected sample to this.
+            ask penny: context id?
+        save float
+    Record 2:
+        Collected Sample parent, heavy residue child.
+        setfieldvalue sample_type: heavy residue
+        special number: HR1400 (make decimal entry)
+        saves heavy residue
+        write sample_id and collection date from collected sample to this.
+    Shows tabgroup stage_1 (with record 1 from above)
+
+//create float
+
+/*
+attributes = createAttributeList();
+name = "name";
+text = "some text";
+vocab = null;
+measure = null;
+certainty = null;
+attributes.add(createEntityAttribute(name, text, vocab, measure, certainty));
+entity_id = saveArchEnt(null, "small", null, attributes);
+*/
+
+    attributes = createAttributeList();
+
+
+    attributes.add(createEntityAttribute("Sample ID", "FLOT1400", null, null, null));
+    sampleTypeAttr = fetchOne("select vocabid from vocabulary where vocabname = '{Flot_Sample}'");
+    if (isNull(sampleTypeAttr)){
+        showToast("couldn't find float!");
+        return;
+    }
+    attributes.add(createEntityAttribute("Sample Type", null, sampleTypeAttr.get(0), null, null));
+    parentSampleID = getFieldValue("Sample/Collected_Sample/Sample_ID");
+    attributes.add(createEntityAttribute("Parent Sample", parentSampleID, null, null, null));
+    parentCollectedDate = getFieldValue("Sample/Collected_Sample/Date_Collected");
+    attributes.add(createEntityAttribute("Date Collected", parentCollectedDate, null, null, null));
+    contextIDAttr = getFieldValue("Sample/Collected_Sample/Context_ID");
+    attributes.add(createEntityAttribute("Context ID", contextIDAttr, null, null, null));
+    float_id = saveArchEnt(null, "Sample", null, attributes);
+
+    saveEntitiesToHierRel("Split", sample_id, float_id, "Split From", "Split To");
+
+
+
+    attributes = createAttributeList();
+    residue_id=null;
+
+    attributes.add(createEntityAttribute("Sample ID", "HR1400", null, null, null));
+    sampleTypeAttr = fetchOne("select vocabid from vocabulary where vocabname = '{Heavy_Residue}'");
+    if (isNull(sampleTypeAttr)){
+        showToast("couldn't find residue!");
+        return;
+    }
+    attributes.add(createEntityAttribute("Sample Type", null, sampleTypeAttr.get(0), null, null));
+    parentSampleID = getFieldValue("Sample/Collected_Sample/Sample_ID");
+    attributes.add(createEntityAttribute("Parent Sample", parentSampleID, null, null, null));
+    parentCollectedDate = getFieldValue("Sample/Collected_Sample/Date_Collected");
+    attributes.add(createEntityAttribute("Date Collected", parentCollectedDate, null, null, null));
+    contextIDAttr = getFieldValue("Sample/Collected_Sample/Context_ID");
+    attributes.add(createEntityAttribute("Context ID", contextIDAttr, null, null, null));
+    residue_id = saveArchEnt(null, "Sample", null, attributes);
+
+    saveEntitiesToHierRel("Split", sample_id, residue_id, "Split To", "Split From");
+    stage1_id = float_id;
+    showTabGroup("Stage_1", stage1_id);
+
+// also context id
+
+
+
+}
+
+
+/*
+
+
+Location tab, on Stage 1, Stage 2 proccessed, Stage 3
+
+    Make sure it works.
+    Add dropdown of locations, with delete button on right
+    List needs to populate on bottom.
+
+
+
+-- Add "Fractionated" to sample type list
+
+
+Tabgroup: Heavy Residue
+-- Rename: Stage 2 Search 
+
+-- Heavy Residue: create dropdown of all heavy residues (which match search criteria)
+-- populate that list with all heavy residues
+-- Remove proccess fractions button
+-- Add dropdown, 
+
+wire in delete, load, point to stage 2 proccessing tab.
+
+*/
+
+
+stage2_id = null;
+onEvent("Heavy_Residue/Heavy_Residue", "show", "stage2SearchTrunc()");
+onEvent("Heavy_Residue/Heavy_Residue/Search_Button", "click", "stage2Search()");
+
+
+stage2Search(){
+
+ ArrayList searchList = fetchAll("select uuid, group_concat(response) " +
+        "FROM identifierAsSpreadsheet "+
+        "WHERE uuid in ( "+
+                        " Select uuid from latestnondeletedaentvalue join attributekey using (attributeid) join vocabulary using (vocabid, attributeid) where attributename = 'Sample Type' and vocabname = '{Heavy_Residue}' limit 10 "+
+                        ") "+
+        "and uuid in ( select uuid from latestnondeletedaentvalue left outer join vocabulary using (vocabid) where freetext like '%"+getFieldValue("Heavy_Residue/Heavy_Residue/Search")+"%' or vocabname like '%"+getFieldValue("Heavy_Residue/Heavy_Residue/Search")+"%' or measure like '%"+getFieldValue("Heavy_Residue/Heavy_Residue/Search")+"%' ) "+
+        " group by uuid");
+
+    populateDropDown("Heavy_Residue/Heavy_Residue/Heavy_Residue_Drop", searchList);
+    populateList("Heavy_Residue/Heavy_Residue/Heavy_Residue_List", searchList);
+   
+
+}
+
+stage2SearchTrunc(){
+
+     ArrayList searchList = fetchAll("select uuid, group_concat(response) " +
+        "FROM identifierAsSpreadsheet "+
+        "WHERE uuid in ( "+
+                        " Select uuid from latestnondeletedaentvalue join attributekey using (attributeid) join vocabulary using (vocabid, attributeid) where attributename = 'Sample Type' and vocabname = '{Heavy_Residue}' limit 10 "+
+                        ") group by uuid");
+
+/*
+
+
+        "WHERE aenttypename = 'Sample'  " +
+        "and uuid in (select uuid  " +
+            "from  latestnondeletedarchent join aenttype using (aenttypeid) join idealaent using (aenttypeid) join attributekey using (attributeid) left outer join latestnondeletedaentvalue using (uuid, attributeid) left outer join vocabulary using (vocabid)  " +
+            "where 
+                    freetext like '%"+getFieldValue("Heavy_Residue/Heavy_Residue/Search")+"%'  " +
+                    "or vocabname like '%"+getFieldValue("Heavy_Residue/Heavy_Residue/Search")+"%'  " +
+                    "or measure like '%"+getFieldValue("Heavy_Residue/Heavy_Residue/Search")+"%' " +
+           
+        "GROUP BY uuid  " +
+        "order by response; ");*/
+    populateDropDown("Heavy_Residue/Heavy_Residue/Heavy_Residue_Drop", searchList);
+    populateList("Heavy_Residue/Heavy_Residue/Heavy_Residue_List", searchList);
+
+}
+
+onEvent("Heavy_Residue/Processed" , "show", "stage2Proccessed()");
+
+/*
+Proccessed: all heavy residue which have a proccessed date and at least one split-to relationship.
+In progress: all heavy residue which have a proccessed date and no split-to relationships.
+*/
+
+stage2Proccessed(){
+
+
+//TODO Brian double-check that the split-to checking works.
+    processedList = fetchAll("select uuid, group_concat(response) " +
+        "FROM identifierAsSpreadsheet "+
+        "WHERE uuid in ( "+
+                        " select uuid from aentrelnaent "+
+                        " where parentuuid in (Select uuid from latestnondeletedaentvalue join attributekey using (attributeid) join vocabulary using (vocabid, attributeid) where attributename = 'Sample Type' and vocabname = '{Heavy_Residue}' )"+
+                           "and parentuuid in ( select uuid from latestnondeletedaentvalue join attributekey using (attributeid) where attributename = 'Date Proccessed' and freetext is not null ) " + 
+                           "and verb = 'Split From' ) "+
+        "group by uuid");
+
+
+
+
+    if (!isNull(processedList))
+        populateList("Heavy_Residue/Processed/Processed_List", processedList);
+    else
+        populateList("Heavy_Residue/Processed/Processed_List", nothingFound);
+}
+onEvent("Heavy_Residue/In_Progress" , "show", "stage2InProccess()");
+
+stage2InProccess(){
+    
+
+     inProgressList = fetchAll("select uuid, group_concat(response) " +
+        "FROM identifierAsSpreadsheet "+
+        "WHERE uuid in ( "+
+                        " Select uuid from latestnondeletedaentvalue join attributekey using (attributeid) join vocabulary using (vocabid, attributeid) where attributename = 'Sample Type' and vocabname = '{Heavy_Residue}'  "+
+                        ") "+
+            "and uuid in ( "+
+                        " select uuid from latestnondeletedaentvalue join attributekey using (attributeid) where attributename = 'Date Proccessed' and freetext is not null " +
+                        ") " + 
+            "and uuid not in ( "+
+                        " select uuid from aentrelnaent where parentuuid in ( "+
+                            " Select uuid from latestnondeletedaentvalue join attributekey using (attributeid) join vocabulary using (vocabid, attributeid) where attributename = 'Sample Type' and vocabname = '{Heavy_Residue}' "+
+                            ") and parentuuid in ( "+
+                            " select uuid from latestnondeletedaentvalue join attributekey using (attributeid) where attributename = 'Date Proccessed' and freetext is not null " + 
+                        ") and verb = 'Split From' "+
+                        ") group by uuid");
+    if (!isNull(inProgressList))
+        populateList("Heavy_Residue/In_Progress/In_Progress_List", inProgressList);
+    else
+        populateList("Heavy_Residue/In_Progress/In_Progress_List", nothingFound);
+}
+
+/*
+
+
+Load takes us to "new" stage 2 process (to create)
+
+
+Stage 2 process tabgroup:
+    Tabs:
+        Heavy Residue sample
+            Read only:
+                Sample ID
+                Volume
+                Comment
+                Date Proccessed
+                Supervisor
+                Created/Modified
+
+            Triggers:
+                Edit (low priority)
+                    Load stage 1 tab group with appropriate collected sample parent
+                Proccess Fraction
+                    + Checklist above trigger
+                        Checklist has (defined in ui):
+                            4, >4mm
+                            2, >2mm
+                            1, >1mm
+                            0.5, >0.5mm
+                    Check to make sure at least one thing checked.
+                        Create samples for each checked item
+                        Sample ID: $ParentSampleID-{4,2,1,0.5}
+                        Sample Type: Fractionated
+                        Parent Sample ID: Heavy residue sample
+                        Fraction size: Based on checkbox
+                        Collection Date:
+                        Context ID:
+                    Load Stage 3 tabgroup
+                        With first created record in order above.
+
+                Return To List
+                    canceltabgroup
+
+        Processed
+        In Progress
+        Location
+
+
+Stage 3 Proccess
+    To create
+
+    Tab: Sample Fraction
+        SampleID (as populated by record creation)
+        Fraction Size
+        Volume
+        Weight
+        Comment
+        Destination
+            Populate dropdown
+        Percentage of Sample
+        
+        Proccess Date
+        Supervisor
+        Context ID
+
+
+        Trigger:
+            Fraction Process
+                Mimics sample proccessed
+                It writes localtimetimstamp and supervisor as set in control to procces date  and supervisor
+            REturn to sample list
+                show stage 2 proccess tab group
+            Duplicate 
+
+    Tab: Sorting. Split into artefact group list tab and special find list tab
+    
+        Trigger: Add Artefact
+            Save an artefact group record
+                Context Id (inherited)
+                split to/from parent sample
+                Parent sample ID (inherit)
+
+
+
+            Showtabgroup Artefact group of recorded
+        List
+            all related artefacts
+
+        Trigger :Add Special Find
+            As per artefact.
+        List
+            all related special finds
+
+
+    Tab: Location
+
+Stage 3 
+    Rename: Stage 4 search
+
+    Samples
+        Rename: Search
+
+        Dropdown/list populated by all fractionated heavy residue samples which have a destiation attribute sort.
+
+        Load/delete
+        
+    To Sort
+        List populated by all fractionated heavy residue samples which have a destiation attribute sort which have no split-to children artefact groups/special finds.
+    Sorted
+        List populated by all fractionated heavy residue samples which have a destiation attribute sort which have one or more split-to children artefact groups/special finds.
+
+
+
+Artefact Group
+    Add attributes:
+        Parent Sample ID
+
+when proccess fractions is pressed:
+
+create a new record
+    Heavy Residue is parent
+    Write heavy residue ID as parent sample
+    copy collection date from heavy residue.
+    Type: Fractionated
+
+
+        
+
+
+*/
+
+
+
+createWetSieve(){
+    /* 
+    Called from collected sample 
+
+1) save
+2) Create two sample records:
+    Record 1:
+        Collected Sample parent, wet sieve child.
+        setfieldvalue sample_type: wet sieve
+        special number: WS1400 (make decimal entry)
+        write sample_id and collection date from collected sample to this.
+        save wet sieve
+    Record 2:
+        Collected Sample parent, heavy residue child.
+        setfieldvalue sample_type: heavy residue
+        special number: HR1400 (make decimal entry)
+        write sample_id and collection date from collected sample to this.
+        saves heavy residue
+        
+    Shows tabgroup stage_1 (with record 1 from above)    
+*/
+
+
+    
+    wetSieve_id = null;
+
+    attributes = createAttributeList();
+
+
+    attributes.add(createEntityAttribute("Sample ID", "WS1400", null, null, null));
+    sampleTypeAttr = fetchOne("select vocabid from vocabulary where vocabname = '{Wet_Sieve}'");
+    if (isNull(sampleTypeAttr)){
+        showToast("couldn't find wet sieve!");
+        return;
+    }
+    attributes.add(createEntityAttribute("Sample Type", null, sampleTypeAttr.get(0), null, null));
+    parentSampleID = getFieldValue("Sample/Collected_Sample/Sample_ID");
+    attributes.add(createEntityAttribute("Parent Sample", parentSampleID, null, null, null));
+    parentCollectedDate = getFieldValue("Sample/Collected_Sample/Date_Collected");
+    attributes.add(createEntityAttribute("Date Collected", parentCollectedDate, null, null, null));
+    contextIDAttr = getFieldValue("Sample/Collected_Sample/Context_ID");
+    attributes.add(createEntityAttribute("Context ID", contextIDAttr, null, null, null));
+    wetSieve_id = saveArchEnt(null, "Sample", null, attributes);
+
+    saveEntitiesToHierRel("Split", sample_id, wetSieve_id, "Split From", "Split To");
+
+
+
+    attributes = createAttributeList();
+    residue_id=null;
+
+    attributes.add(createEntityAttribute("Sample ID", "HR1400", null, null, null));
+    sampleTypeAttr = fetchOne("select vocabid from vocabulary where vocabname = '{Heavy_Residue}'");
+    if (isNull(sampleTypeAttr)){
+        showToast("couldn't find residue!");
+        return;
+    }
+    attributes.add(createEntityAttribute("Sample Type", null, sampleTypeAttr.get(0), null, null));
+    parentSampleID = getFieldValue("Sample/Collected_Sample/Sample_ID");
+    attributes.add(createEntityAttribute("Parent Sample", parentSampleID, null, null, null));
+    parentCollectedDate = getFieldValue("Sample/Collected_Sample/Date_Collected");
+    attributes.add(createEntityAttribute("Date Collected", parentCollectedDate, null, null, null));
+    contextIDAttr = getFieldValue("Sample/Collected_Sample/Context_ID");
+    attributes.add(createEntityAttribute("Context ID", contextIDAttr, null, null, null));
+    residue_id = saveArchEnt(null, "Sample", null, attributes);
+
+    saveEntitiesToHierRel("Split", sample_id, residue_id, "Split To", "Split From");
+    stage1_id = wetSieve_id;
+    showTabGroup("Stage_1", stage1_id);
+}
+
+
+
+
 
 
 String sample_id = null;
@@ -133,7 +645,7 @@ newSample(){
 }
 
 loadSampleFrom(archent_id) {
-    sample_id = archentid;
+    sample_id = archent_id;
     if (isNull(sample_id)) {
         showToast("No Sample selected");
         return;
@@ -145,9 +657,9 @@ loadSampleFrom(archent_id) {
     setFieldValue("Sample/Collected_Sample/Created_date", bar.get(1));
 
     Object foo2 = fetchOne("select fname || ' ' || lname from user join archentity using (userid) where uuid = '"+sample_id+"' group by uuid having max(aenttimestamp)");
-    setFieldValue("Sample/Collected_Sample/Modified_by", foo1.get(0));
+    setFieldValue("Sample/Collected_Sample/Modified_by", foo2.get(0));
     Object bar2 = fetchOne("select uuid, datetime(aentTimestamp, 'localtime')  from archentity where uuid = '"+sample_id+"' group by uuid having max(aenttimestamp);");
-    setFieldValue("Sample/Collected_Sample/Modified_date", bar1.get(1));
+    setFieldValue("Sample/Collected_Sample/Modified_date", bar2.get(1));
 }
 
 loadSample(archent_id) {
@@ -160,7 +672,7 @@ saveSample(String callback) {
     //     showWarning("Logic Error", "Cannot save record without id");
     //     return;
     // }
-    
+    showToast("saving *sample*");
     if (!isNull(sample_id)) {
         entity = fetchArchEnt(sample_id);
     }
@@ -254,7 +766,7 @@ loadRelatedLocations(String stage) {
 
 processSample() {
     date = fetchOne("select datetime(CURRENT_TIMESTAMP, 'localtime')");
-    setFieldValue("Stage_1/Stage_1/Supervisor", username);
+    setFieldValue("Stage_1/Stage_1/Supervisor", getFieldValue("control/Control/Supervisor"));
     setFieldValue("Stage_1/Stage_1/Processed_Date", date.get(0));
 }
 

@@ -50,6 +50,9 @@
         <description /></term>
         <term>{Heavy_Residue}
         <description /></term>
+        <term>{Fractionated}
+        <description /></term>
+        
         <term>{zOther}
         <description /></term>
       </lookup>
@@ -137,7 +140,7 @@
       <description>The date on which the sample was processed.</description>
     </property>
     <property name="Supervisor" type="freetext">
-      <description>The supervisor in charge on the day the sample was processed.</description>
+      <description>The supervisor in charge on the day the sample was processed.</description>date
     </property>
     <property name="Fraction Size" type="enum">
       <description>The minimum size of grains in the sample</description>
